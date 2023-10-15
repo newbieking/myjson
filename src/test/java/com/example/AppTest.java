@@ -1,7 +1,5 @@
 package com.example;
 
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Date;
 import java.time.LocalDate;
 
