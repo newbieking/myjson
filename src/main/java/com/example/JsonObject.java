@@ -61,7 +61,6 @@ public class JsonObject {
                     format = "\"%s\": %s";
                     propertyValue = toJson(method.invoke(object), returnType);
                 }
-                System.out.println(propertyName);
                 stringBuilder.append(String.format(format, propertyName, propertyValue));
                 appendComma = false;
             }
