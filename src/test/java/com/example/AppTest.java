@@ -21,7 +21,10 @@ public class AppTest {
                 false, LocalDate.now(), Date.valueOf(LocalDate.now()),
                 new Address(123L, "lalala apartment", new String[] { "a", null, "c" }),
                 22);
-        String json = JsonObject.toJson(customer, Customer.class);
+        String json = JsonObject.toJson(customer);
         System.out.println(json);
+
+        String json2 = JsonObject.toJson(new String[]{"one", "two", null, "three"});
+        System.out.println(json2);
     }
 }

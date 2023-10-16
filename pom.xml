@@ -7,6 +7,8 @@
   <groupId>com.example</groupId>
   <artifactId>myjson</artifactId>
   <version>1.0-SNAPSHOT</version>
+  
+  <packaging>jar</packaging>
 
   <name>myjson</name>
   <!-- FIXME change it to the project's website -->

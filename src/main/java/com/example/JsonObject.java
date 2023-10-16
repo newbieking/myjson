@@ -4,69 +4,60 @@ import java.lang.reflect.Method;
 import java.time.temporal.Temporal;
 
 public class JsonObject {
-    public static <T> String toJson(Object object, Class<T> clazz)
-            throws Exception {
-        StringBuilder stringBuilder = new StringBuilder("{");
 
-        Method[] declaredMethods = clazz.getDeclaredMethods();
+    public static <T> String toJson(Object object)
+            throws Exception {
+
+        StringBuilder stringBuilder = new StringBuilder("{");
         boolean appendComma = true;
 
         if (object == null) {
             return "null";
-        } else if (isSimpleClass(clazz)) {
+        }
+        Class<?> clazz = object.getClass();
+
+        if (isSimpleClass(clazz)) {
             return object.toString();
-        } else if (CharSequence.class.isAssignableFrom(clazz)) {
+        } else if (CharSequence.class.isAssignableFrom(clazz)
+                || Temporal.class.isAssignableFrom(clazz)
+                || java.util.Date.class.isAssignableFrom(clazz)) {
             return "\"" + object.toString() + "\"";
+        } else if (clazz.isArray()) {
+            return serializeArray2Json((Object[]) object);
         }
 
+        Method[] declaredMethods = clazz.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (isAccessor(method)) {
                 if (!appendComma) {
                     stringBuilder.append(",");
                 }
-
-                Class<?> returnType = method.getReturnType();
                 String propertyName = getPropertyName(method);
-                Object invoke = method.invoke(object);
-                String propertyValue = invoke != null ? invoke.toString() : "null";
-
-                String format;
-                if (CharSequence.class.isAssignableFrom(returnType)
-                        || Temporal.class.isAssignableFrom(returnType)
-                        || java.util.Date.class.isAssignableFrom(returnType)) {
-                    format = "\"%s\": \"%s\"";
-                } else if (isSimpleClass(returnType)) {
-                    format = "\"%s\": %s";
-                } else if (returnType.isArray()) {
-                    StringBuilder builder = new StringBuilder();
-                    format = "\"%s\": [%s]";
-                    Class<?> componentType = returnType.getComponentType();
-                    Object[] objs = (Object[]) method.invoke(object);
-                    boolean appendComma4List = true;
-                    if (objs == null) {
-                        format = "\"%s\": %s";
-                        builder.append("null");
-                    } else {
-                        for (Object obj : objs) {
-                            if (!appendComma4List) {
-                                builder.append(",");
-                            }
-                            builder.append(toJson(obj, componentType));
-                            appendComma4List = false;
-                        }
-                    }
-
-                    propertyValue = builder.toString();
-                } else {
-                    format = "\"%s\": %s";
-                    propertyValue = toJson(method.invoke(object), returnType);
-                }
-                stringBuilder.append(String.format(format, propertyName, propertyValue));
+                String propertyValue = toJson(method.invoke(object));
+                stringBuilder.append(
+                    String.format("\"%s\": %s", propertyName, propertyValue));
                 appendComma = false;
             }
         }
 
         return stringBuilder.append("}").toString();
+    }
+
+    private static String serializeArray2Json(Object[] objs) throws Exception {
+        if (!objs.getClass().isArray()) {
+            throw new RuntimeException("Expect an Array, but " + objs.getClass().getName() + " was given.");
+        }
+        StringBuilder builder = new StringBuilder("[");
+        boolean appendComma4List = true;
+        for (Object obj : objs) {
+            if (!appendComma4List) {
+                builder.append(",");
+            }
+            builder.append(toJson(obj));
+            appendComma4List = false;
+        }
+
+        return builder.append("]").toString();
     }
 
     private static String getPropertyName(Method method) {
@@ -85,14 +76,7 @@ public class JsonObject {
     private static <T> boolean isSimpleClass(Class<T> clazz) {
         return (Number.class.isAssignableFrom(clazz)
                 || Boolean.class.isAssignableFrom(clazz)
-                || clazz.getName().equals("char")
-                || clazz.getName().equals("byte")
-                || clazz.getName().equals("short")
-                || clazz.getName().equals("int")
-                || clazz.getName().equals("long")
-                || clazz.getName().equals("float")
-                || clazz.getName().equals("double")
-                || clazz.getName().equals("boolean"));
+                || clazz.isPrimitive());
     }
 
 }
